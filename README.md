@@ -3,6 +3,8 @@
 A text-to-speech app built on [Kyutai's Pocket TTS](https://github.com/kyutai-labs/pocket-tts).
 Runs entirely on CPU, no cloud API keys needed.
 
+🔗 **[Try the live app here](https://voice-of-good-hope.streamlit.app)**
+
 ## What's new in this version
 
 - **MP3 in, MP3 out.** Upload mp3/m4a/flac/ogg/wav for voice cloning, and
