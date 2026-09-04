@@ -1,0 +1,7 @@
+pocket-tts
+streamlit
+scipy
+numpy
+soundfile
+lameenc
+Pillow
