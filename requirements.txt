@@ -1,7 +1,7 @@
 --extra-index-url https://download.pytorch.org/whl/cpu
 torch
 pocket-tts
-streamlit
+streamlit>=1.38
 scipy
 numpy
 soundfile
