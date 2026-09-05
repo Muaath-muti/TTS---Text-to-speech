@@ -1,9 +1,6 @@
 <p align="center">
   <img src="assets/uwc_logo.png" alt="University of the Western Cape" width="90" />
 </p>
-
-!Built for UWC using streamlit.
-
 # Voice of Good Hope — University TTS Tool
 
 A text-to-speech app built on [Kyutai's Pocket TTS](https://github.com/kyutai-labs/pocket-tts).
