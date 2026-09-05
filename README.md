@@ -2,8 +2,7 @@
   <img src="assets/uwc_logo.png" alt="University of the Western Cape" width="90" />
 </p>
 
-![Built for UWC](https://img.shields.io/badge/Built%20for-UWC-010C80?style=flat-square&labelColor=B9AB60)
-![Streamlit](https://img.shields.io/badge/Streamlit-app-FF4B4B?style=flat-square)
+!Built for UWC using streamlit.
 
 # Voice of Good Hope — University TTS Tool
 
