@@ -298,10 +298,10 @@ with tab_library:
 # ----------------------------------------------------------------------
 with tab_add_voice:
     st.write(
-        "Upload a clean audio sample (10-30 seconds, one speaker, "
+        "Provide a clean audio sample (10-30 seconds, one speaker, "
         "minimal background noise) to clone a new voice — for example, "
-        "a South African-accented English speaker. Any common audio "
-        "format works (wav, mp3, m4a, flac, ogg)."
+        "a South African-accented English speaker. You can either "
+        "upload a file or record directly in your browser."
     )
 
     new_voice_name = st.text_input(
@@ -309,21 +309,42 @@ with tab_add_voice:
         placeholder="e.g. thabo_sa_english",
         help="Used as the internal file name — letters, numbers, and underscores only.",
     )
-    uploaded_audio = st.file_uploader(
-        "Voice sample", type=["wav", "mp3", "m4a", "flac", "ogg"]
+
+    source_choice = st.radio(
+        "Voice sample source",
+        options=["Upload a file", "Record with microphone"],
+        horizontal=True,
     )
 
-    can_clone = bool(new_voice_name.strip()) and uploaded_audio is not None
+    voice_sample_bytes: bytes | None = None
+
+    if source_choice == "Upload a file":
+        uploaded_audio = st.file_uploader(
+            "Voice sample", type=["wav", "mp3", "m4a", "flac", "ogg"]
+        )
+        if uploaded_audio is not None:
+            voice_sample_bytes = uploaded_audio.read()
+    else:
+        st.caption(
+            "Click record, speak clearly for 10-30 seconds, then click stop. "
+            "Your browser will ask permission to use the microphone the first time."
+        )
+        recorded_audio = st.audio_input("Record your voice sample")
+        if recorded_audio is not None:
+            voice_sample_bytes = recorded_audio.read()
+            st.audio(recorded_audio)
+
+    can_clone = bool(new_voice_name.strip()) and voice_sample_bytes is not None
     if st.button("Clone and save this voice", disabled=not can_clone):
         try:
             with st.spinner("Cloning voice... this can take a little while on CPU."):
-                engine.clone_voice_from_audio(uploaded_audio.read(), new_voice_name.strip())
+                engine.clone_voice_from_audio(voice_sample_bytes, new_voice_name.strip())
             st.success(
                 f"Saved as '{new_voice_name.strip()}'. Taking you to the voice list..."
             )
             st.rerun()
         except Exception as e:
             st.error(
-                "Couldn't process that audio file. Try a different file.\n\n"
+                "Couldn't process that audio sample. Try a different file or re-record it.\n\n"
                 f"Details: {e}"
             )
