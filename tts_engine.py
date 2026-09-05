@@ -5,13 +5,12 @@ Handles:
 - loading the model once and reusing it
 - generating speech from text + a chosen voice
 - cloning a new voice from an uploaded audio sample (any format
-  soundfile understands) and saving it to disk for reuse
+  soundfile/ffmpeg understands) and saving it to disk for reuse
 - listing / deleting voices in the local voice library
 """
 
 from __future__ import annotations
 
-import io
 import re
 from pathlib import Path
 
@@ -19,6 +18,8 @@ import numpy as np
 import soundfile as sf
 import torch
 from pocket_tts import TTSModel, export_model_state
+
+from audio_utils import read_any_audio
 
 VOICES_DIR = Path(__file__).parent / "voices"
 VOICES_DIR.mkdir(exist_ok=True)
@@ -66,7 +67,7 @@ class TTSEngine:
         """
         tmp_path = VOICES_DIR / f"_tmp_{voice_name}.wav"
         try:
-            audio_data, sample_rate = sf.read(io.BytesIO(audio_bytes))
+            audio_data, sample_rate = read_any_audio(audio_bytes)
             sf.write(tmp_path, audio_data, sample_rate)
             state = self.model.get_state_for_audio_prompt(tmp_path)
         finally:
