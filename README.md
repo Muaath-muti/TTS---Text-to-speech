@@ -1,14 +1,24 @@
+<p align="center">
+  <img src="assets/uwc_logo.png" alt="University of the Western Cape" width="90" />
+</p>
+
+![Built for UWC](https://img.shields.io/badge/Built%20for-UWC-010C80?style=flat-square&labelColor=B9AB60)
+![Streamlit](https://img.shields.io/badge/Streamlit-app-FF4B4B?style=flat-square)
+
 # Voice of Good Hope — University TTS Tool
 
 A text-to-speech app built on [Kyutai's Pocket TTS](https://github.com/kyutai-labs/pocket-tts).
 Runs entirely on CPU, no cloud API keys needed.
 
-🔗 **[Try the live app here](https://voice-of-good-hope.streamlit.app)**
+🔗 [Try the live app here](https://voice-of-good-hope.streamlit.app/)
 
 ## What's new in this version
 
 - **MP3 in, MP3 out.** Upload mp3/m4a/flac/ogg/wav for voice cloning, and
   download generated speech as either .wav or .mp3.
+- **Record directly in the browser.** Add a new voice by uploading a
+  file or recording straight from your microphone — no separate
+  recording app needed.
 - **Redesigned interface** — custom styling, clearer layout, three tabs
   (Generate speech / Voice library / Add a new voice).
 - **Voice library tab** — see every built-in and cloned voice in one
@@ -26,7 +36,9 @@ Runs entirely on CPU, no cloud API keys needed.
 - `tts_engine.py` — wraps the `pocket-tts` library: loads the model,
   generates speech, clones/saves/deletes voices
 - `audio_utils.py` — converts audio to downloadable .wav / .mp3 bytes,
-  and decodes any uploaded format into clean .wav for the model
+  and decodes any uploaded format (including m4a, via ffmpeg fallback)
+  into clean audio for the model
+- `packages.txt` — system-level dependencies (`libsndfile1`, `ffmpeg`)
 - `voices/` — cloned voices are saved here as `.safetensors` files
 
 ## Setup
@@ -45,6 +57,11 @@ Runs entirely on CPU, no cloud API keys needed.
    pip install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cpu
    ```
    (On macOS/Windows you can drop the `--extra-index-url` part.)
+4. Make sure `ffmpeg` is installed on your system (needed for m4a voice
+   samples, e.g. iPhone voice memos):
+   - Windows: `winget install ffmpeg` (or download from ffmpeg.org)
+   - Mac: `brew install ffmpeg`
+   - Linux: `sudo apt install ffmpeg libsndfile1`
 
 ## Running it
 
@@ -73,9 +90,10 @@ Face before first use:
 ## Adding your South African voice
 
 1. Record (or find) a clean 10–30 second sample — one speaker, quiet
-   room, no background noise. Any format works (wav, mp3, m4a, flac, ogg).
-2. Go to the **"Add a new voice"** tab, name it, upload the sample,
-   click **Clone and save this voice**.
+   room, no background noise. Any format works (wav, mp3, m4a, flac, ogg),
+   or record directly in the app using your microphone.
+2. Go to the **"Add a new voice"** tab, name it, choose upload or
+   record, then click **Clone and save this voice**.
 3. It appears in the voice dropdown and the **Voice library** tab from
    then on.
 
