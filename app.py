@@ -179,7 +179,7 @@ tab_generate, tab_library, tab_add_voice = st.tabs(
 # TAB 1: Generate speech
 # ----------------------------------------------------------------------
 with tab_generate:
-    saved_voices = engine.list_saved_voices()
+    saved_voices = engine.list_saved_voices(user_id)
     all_voice_labels = list(BUILT_IN_VOICES.keys()) + saved_voices
 
     text = st.text_area(
@@ -211,9 +211,9 @@ with tab_generate:
         try:
             with st.spinner("Generating..."):
                 if split_sentences:
-                    audio, sample_rate, failed = engine.generate_by_sentence(text, voice_id)
+                    audio, sample_rate, failed = engine.generate_by_sentence(user_id, text, voice_id)
                 else:
-                    audio, sample_rate = engine.generate(text, voice_id)
+                    audio, sample_rate = engine.generate(user_id, text, voice_id)
                     failed = []
 
             st.session_state.history.insert(
@@ -291,14 +291,14 @@ with tab_generate:
 # TAB 2: Voice library
 # ----------------------------------------------------------------------
 with tab_library:
-    st.write("Voices available to everyone using this app.")
+    st.write("Built-in voices are shared by everyone. Cloned voices below are private to your account.")
 
     st.markdown("**Built-in voices**")
     for label in BUILT_IN_VOICES:
         st.markdown(f'<div class="voice-row">{label}</div>', unsafe_allow_html=True)
 
-    saved_voices = engine.list_saved_voices()
-    st.markdown("**Cloned voices**")
+    saved_voices = engine.list_saved_voices(user_id)
+    st.markdown("**Your cloned voices**")
     if not saved_voices:
         st.caption("No cloned voices yet — add one in the \"Add a new voice\" tab.")
     for voice_name in saved_voices:
@@ -307,7 +307,7 @@ with tab_library:
             st.markdown(f'<div class="voice-row">{voice_name}</div>', unsafe_allow_html=True)
         with c2:
             if st.button("Delete", key=f"del_{voice_name}"):
-                engine.delete_saved_voice(voice_name)
+                engine.delete_saved_voice(user_id, voice_name)
                 st.rerun()
 
 # ----------------------------------------------------------------------
@@ -355,7 +355,7 @@ with tab_add_voice:
     if st.button("Clone and save this voice", disabled=not can_clone):
         try:
             with st.spinner("Cloning voice... this can take a little while on CPU."):
-                engine.clone_voice_from_audio(voice_sample_bytes, new_voice_name.strip())
+                engine.clone_voice_from_audio(user_id, voice_sample_bytes, new_voice_name.strip())
             st.success(
                 f"Saved as '{new_voice_name.strip()}'. Taking you to the voice list..."
             )
