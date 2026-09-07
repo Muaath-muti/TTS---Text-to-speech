@@ -6,7 +6,8 @@ Handles:
 - generating speech from text + a chosen voice
 - cloning a new voice from an uploaded audio sample (any format
   soundfile/ffmpeg understands) and saving it to disk for reuse
-- listing / deleting voices in the local voice library
+- listing / deleting voices in the local voice library, scoped per
+  signed-in user (each user only sees/manages their own cloned voices)
 """
 
 from __future__ import annotations
@@ -34,6 +35,14 @@ BUILT_IN_VOICES: dict[str, str] = {
 }
 
 
+def _safe_user_folder(user_id: str) -> str:
+    """
+    Turn an email (or any user identifier) into a filesystem-safe folder
+    name, e.g. "thabo@uwc.ac.za" -> "thabo_at_uwc.ac.za".
+    """
+    return re.sub(r"[^A-Za-z0-9_.-]", "_", user_id.replace("@", "_at_"))
+
+
 class TTSEngine:
     """Loads the Pocket TTS model once and exposes simple generate/clone calls."""
 
@@ -52,20 +61,30 @@ class TTSEngine:
             )
         return self._model
 
-    def list_saved_voices(self) -> list[str]:
-        """Return the names of voices that have been cloned and saved locally."""
-        return sorted(p.stem for p in VOICES_DIR.glob("*.safetensors"))
+    def _user_dir(self, user_id: str) -> Path:
+        """Return (and create if needed) this user's private voice folder."""
+        user_dir = VOICES_DIR / _safe_user_folder(user_id)
+        user_dir.mkdir(exist_ok=True)
+        return user_dir
 
-    def delete_saved_voice(self, voice_name: str) -> None:
-        path = VOICES_DIR / f"{voice_name}.safetensors"
+    def list_saved_voices(self, user_id: str) -> list[str]:
+        """Return the names of voices this user has cloned and saved."""
+        return sorted(p.stem for p in self._user_dir(user_id).glob("*.safetensors"))
+
+    def delete_saved_voice(self, user_id: str, voice_name: str) -> None:
+        path = self._user_dir(user_id) / f"{voice_name}.safetensors"
         path.unlink(missing_ok=True)
 
-    def clone_voice_from_audio(self, audio_bytes: bytes, voice_name: str) -> Path:
+    def clone_voice_from_audio(
+        self, user_id: str, audio_bytes: bytes, voice_name: str
+    ) -> Path:
         """
         Clone a voice from an uploaded audio sample (wav/mp3/m4a/flac/ogg
-        bytes) and save it under `voice_name` for reuse.
+        bytes) and save it under `voice_name` inside this user's private
+        folder for reuse.
         """
-        tmp_path = VOICES_DIR / f"_tmp_{voice_name}.wav"
+        user_dir = self._user_dir(user_id)
+        tmp_path = user_dir / f"_tmp_{voice_name}.wav"
         try:
             audio_data, sample_rate = read_any_audio(audio_bytes)
             sf.write(tmp_path, audio_data, sample_rate)
@@ -73,29 +92,29 @@ class TTSEngine:
         finally:
             tmp_path.unlink(missing_ok=True)
 
-        save_path = VOICES_DIR / f"{voice_name}.safetensors"
+        save_path = user_dir / f"{voice_name}.safetensors"
         export_model_state(state, str(save_path))
         return save_path
 
-    def _load_voice_state(self, voice_name: str) -> dict:
-        saved_path = VOICES_DIR / f"{voice_name}.safetensors"
+    def _load_voice_state(self, user_id: str, voice_name: str) -> dict:
+        saved_path = self._user_dir(user_id) / f"{voice_name}.safetensors"
         if saved_path.exists():
             return self.model.get_state_for_audio_prompt(str(saved_path))
         if voice_name in BUILT_IN_VOICES:
             return self.model.get_state_for_audio_prompt(BUILT_IN_VOICES[voice_name])
         return self.model.get_state_for_audio_prompt(voice_name)
 
-    def generate(self, text: str, voice_name: str):
+    def generate(self, user_id: str, text: str, voice_name: str):
         """
         Generate speech audio for `text` using `voice_name`.
         Returns (audio_samples: np.ndarray, sample_rate: int).
         """
-        voice_state = self._load_voice_state(voice_name)
+        voice_state = self._load_voice_state(user_id, voice_name)
         audio_tensor: torch.Tensor = self.model.generate_audio(voice_state, text)
         audio = audio_tensor.detach().cpu().numpy()
         return audio, self.model.sample_rate
 
-    def generate_by_sentence(self, text: str, voice_name: str):
+    def generate_by_sentence(self, user_id: str, text: str, voice_name: str):
         """
         Generate speech sentence-by-sentence and stitch the results
         together with a short silence between them.
@@ -107,9 +126,9 @@ class TTSEngine:
         """
         sentences = _split_into_sentences(text)
         if not sentences:
-            return self.generate(text, voice_name)[0], self.model.sample_rate, []
+            return self.generate(user_id, text, voice_name)[0], self.model.sample_rate, []
 
-        voice_state_template = self._load_voice_state(voice_name)
+        voice_state_template = self._load_voice_state(user_id, voice_name)
         sample_rate = self.model.sample_rate
         silence = np.zeros(int(sample_rate * 0.25), dtype=np.float32)
 
