@@ -118,6 +118,23 @@ st.markdown(
 
 
 # --------------------------------------------------------------------
+# Sign-in gate — nothing below this runs until the user is logged in
+# --------------------------------------------------------------------
+if not st.user.is_logged_in:
+    st.subheader("Sign in to continue")
+    st.write("Please sign in with your Google account to use Voice of Good Hope.")
+    st.button("Log in with Google", type="primary", on_click=st.login)
+    st.stop()
+
+user_id = st.user.email  # unique key for "whose voices are these" — used in phase 2
+
+with st.sidebar:
+    st.caption(f"Signed in as **{st.user.email}**")
+    st.button("Log out", on_click=st.logout)
+    st.divider()
+
+
+# --------------------------------------------------------------------
 # Engine (with stability controls in the sidebar)
 # --------------------------------------------------------------------
 @st.cache_resource(show_spinner="Loading the model (first run only)...")
