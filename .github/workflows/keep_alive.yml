@@ -9,5 +9,18 @@ jobs:
   ping:
     runs-on: ubuntu-latest
     steps:
-      - name: Ping the app to keep it awake
-        run: curl -s https://voice-of-good-hope.streamlit.app > /dev/null
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Playwright and its browser
+        run: |
+          pip install playwright
+          playwright install --with-deps chromium
+
+      - name: Visit the app with a real browser session
+        run: python keep_awake.py
